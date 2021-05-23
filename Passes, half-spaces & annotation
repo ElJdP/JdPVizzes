@@ -1,0 +1,63 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from mplsoccer.pitch import Pitch, VerticalPitch
+from matplotlib.colors import to_rgba
+import seaborn as sns
+from urllib.request import urlopen
+from PIL import Image
+import matplotlib.image as mpimg
+from matplotlib import patches
+    
+passes_df = events_df.loc[[row['displayName'] == 'Pass' for row in list(events_df['type'])]].reset_index(drop=True)
+    
+    # Get Team Passes
+team_passes = passes_df.loc[passes_df['teamId'] == teamId]
+        
+    # Extracting Box Passes from Total Passes
+box_passes = team_passes.copy()
+for i,pas in box_passes.iterrows():
+      X = pas["x"]/100*120
+      Xend = pas["endX"]/100*120
+      Y = pas["y"]/100*80
+      Yend = pas["endY"]/100*80
+      if Xend >=80 and Xend <=102 and Yend >=18 and Yend <= 30:
+          if X >=80 and Xend <=102 and  Y>=18 and Y <= 30:
+               box_passes = box_passes.drop([i])
+           else:
+               pass
+       else:
+           box_passes = box_passes.drop([i])
+            
+successful_box_passes = box_passes.copy()
+unsuccessful_box_passes = box_passes.copy()
+for i,pas in box_passes.iterrows():
+    if pas['outcomeType']['value'] == 0:
+          successful_box_passes = successful_box_passes.drop([i])
+      else:
+          unsuccessful_box_passes = unsuccessful_box_passes.drop([i])
+        
+    # orientation='vertical'
+pitch = VerticalPitch(pitch_type='statsbomb', half=True, pitch_color=pitch_color, line_color='#c7d5cc')
+fig, ax = pitch.draw(figsize=(16, 11) , tight_layout=True)
+plt.gca().invert_xaxis()
+    
+    # Plot the completed passes
+ pitch.lines(successful_box_passes.x/100*120, 80-successful_box_passes.y/100*80,
+             successful_box_passes.endX/100*120, 80-successful_box_passes.endY/100*80,
+             lw=4, cmap=cmap, comet=True, zorder=1,
+             abel='Successful Passes', ax=ax)
+    
+ pitch.scatter(successful_box_passes.endX/100*120, 80-successful_box_passes.endY/100*80, 
+               marker='*', ax=ax, edgecolors='#121212', c='#D80808', s=800, zorder=2 )
+ rect=patches.Rectangle(
+  xy=(50,76), width=12, height=26, fc='red', alpha=0.2)
+  ax.add_patch(rect)
+  style = "Simple, tail_width=0.5, head_width=4, head_length=10"
+
+  kw = dict(arrowstyle=style, color="#D3D3D3")
+  a1 = patches.FancyArrowPatch((20, 80),(57,87),  connectionstyle="arc3,rad=.5", **kw)
+  ax.add_patch(a1)
+  ax.text(34,76, 'Manchester City completed 6 passes \n in this left half-space', c='white', fontsize=20, ha='left')
+  # Set the title
+  fig.suptitle(f'Completed LHS Passes - {team}', y=.95, fontsize=15, c='white')
